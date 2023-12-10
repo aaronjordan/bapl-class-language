@@ -1,0 +1,17 @@
+name: BAPL Lua Excercises
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check_exercises:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install deps
+        run: sudo apt install bash lua5.4 lua-unit lua-lpeg luakit luarocks
+      - name: Run tests
+        run: bash scripts/check_tests.sh
