@@ -25,6 +25,7 @@ function TestMatcher()
   for i = 1, #tests do
     local actual = lang:match(tests[i].input)
     lu.assertEquals(actual, tests[i].out)
+    print('[PASS]: input ' .. tests[i].input .. ' => ' .. tests[i].out)
   end
 end
 
