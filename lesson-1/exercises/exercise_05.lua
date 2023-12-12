@@ -29,7 +29,6 @@ function TestMatcher()
     --new: add optional +/- leading on number
     { input = "-7",                     expected = { "-7" } },
     { input = "+3+-12",                 expected = { "+3", 3, "-12" } },
-
   }
 
   for i = 1, #testInputsAndExpected do
