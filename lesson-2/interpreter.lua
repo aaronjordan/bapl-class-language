@@ -7,9 +7,15 @@ local function node(num)
 end
 
 local space = lpeg.S(" \t\n") ^ 0
-local b10 = lpeg.R("09") ^ 1 / node
+
+local b10int = lpeg.R("09") ^ 1
+local fp = "." * lpeg.R("09") ^ 1
+local enot = lpeg.S("eE") * lpeg.S("+-") ^ -1 * b10int
+local tail = fp + enot
+
+local b10num = b10int * tail ^ -1 / node
 local b16 = ("0" * lpeg.S("xX") * lpeg.R("09", "AF", "af") ^ 1) / node
-local numeral = b16 + b10 * space
+local numeral = b16 + b10num * space
 
 local OP = "(" * space
 local CP = ")" * space

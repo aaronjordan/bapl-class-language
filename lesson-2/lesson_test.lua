@@ -90,4 +90,18 @@ function TestNewOps2()
   lu.assertEquals(exec("-12 - 12 != 4 * -6"), 0)
 end
 
+function TestExtendedNumbers()
+  -- Allow floating point numbers (must contain leading digits)
+  lu.assertEquals(exec("0.05"), 0.05)
+  lu.assertEquals(exec("0.5 * 10"), 5)
+  lu.assertEquals(exec("12 * -12.5"), -150)
+
+  -- Allow scientific notation
+  lu.assertEquals(exec("5e2"), 500)
+  lu.assertEquals(exec("5E+2"), 500)
+  lu.assertEquals(exec("5e-2"), 0.05)
+  lu.assertEquals(exec("5E-4"), 0.0005)
+  lu.assertEquals(exec("5e2 + 3e1"), 530)
+end
+
 os.exit(lu.LuaUnit.run())
