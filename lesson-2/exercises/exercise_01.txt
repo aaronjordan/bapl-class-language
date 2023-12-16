@@ -1,0 +1,15 @@
+a. Manually execute the stack-machine:
+
+  [ add, mult, sub, push 21, push 24, push 2, push 4 ]
+
+1. push 4            => [4]
+2. push 2            => [4,2]
+3. push 24           => [4,2,24]
+4. push 21           => [4,2,24,21]
+5. sub(24,21)  = 3   => [4,2,3]
+6. mult(2,3)   = 6   => [4,6]
+7. add(4,6)    = 10  => [10]
+
+b. What arithmetic expression yields this program?
+
+4 + 2 * (24 - 21)
