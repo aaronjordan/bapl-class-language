@@ -60,6 +60,8 @@ function TestNewOps1()
   lu.assertEquals(exec("4 * 2^4 + 1"), 65)
 end
 
+-- CP / 11. Adding more ops (pt. 2)
+-- Add unary '-' and relational ops >/</...
 function TestNewOps2()
   -- Add unary minus operator for negation
   lu.assertEquals(exec("-2"), -2)
@@ -90,6 +92,8 @@ function TestNewOps2()
   lu.assertEquals(exec("-12 - 12 != 4 * -6"), 0)
 end
 
+-- CP / 12. Adding more number sets
+-- Add floating points and scientific notation matches
 function TestExtendedNumbers()
   -- Allow floating point numbers (must contain leading digits)
   lu.assertEquals(exec("0.05"), 0.05)
