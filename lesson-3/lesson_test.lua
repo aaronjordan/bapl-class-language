@@ -52,4 +52,29 @@ function TestPrintStatement()
   end
 end
 
+-- CP 9 / Undefined variables
+-- Throw when dereferencing a variable that has not been set
+function TestUndefinedVarError()
+  local samples = {
+    { true,  "x = y", },
+    { false, "x = 4; return x", },
+    { true,  "return apple", },
+  }
+
+
+  for i = 1, #samples do
+    local shouldThrow = samples[i][1]
+    print("parse: " .. samples[i][2])
+    local ast = lang.parse(samples[i][2])
+
+    if shouldThrow then
+      lu.assertError(lang.compile, ast)
+    else
+      local state = {}
+      lang.run(lang.compile(ast), state, {})
+      lu.assertNotNil(state[1])
+    end
+  end
+end
+
 os.exit(lu.LuaUnit.run())

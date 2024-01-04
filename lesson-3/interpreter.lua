@@ -126,8 +126,16 @@ local function codeExp(state, ast)
     addCode(state, "push")
     addCode(state, ast.val)
   elseif ast.tag == "variable" then
-    addCode(state, "load")
-    addCode(state, var2num(state, ast.var))
+    print("var check " .. ast.var .. " as " .. state.vars[ast.var])
+    local exists = state.vars[ast.var] ~= nil
+    if not exists then
+      print("var is err")
+      error("Variable " .. ast.var .. " was used before it was defined")
+    else
+      print("var is ok")
+      addCode(state, "load")
+      addCode(state, var2num(state, ast.var))
+    end
   elseif ast.tag == "binop" then
     codeExp(state, ast.e1)
     codeExp(state, ast.e2)
