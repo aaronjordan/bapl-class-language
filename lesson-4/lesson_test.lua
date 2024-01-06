@@ -17,7 +17,7 @@ local WORKDIR = os.getenv("DIR")
 local function loadFile(name)
   local file = io.open((WORKDIR or ".") .. "/srcs/" .. name, "r")
   if (not file) then error('file not found') end
-  local content = file:read("a")
+  local content = file:read("*a")
   io.close(file)
   return content;
 end
