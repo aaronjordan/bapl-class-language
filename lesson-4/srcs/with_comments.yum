@@ -1,0 +1,12 @@
+#{
+
+This whole region is a big comment
+Isn't that neat?
+
+#}
+
+x = 12;
+y = 12;
+z1 = x * y; # this is a normal comment
+z2 = x * x;
+return z1

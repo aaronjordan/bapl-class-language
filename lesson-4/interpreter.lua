@@ -38,7 +38,7 @@ local digit = lpeg.R("09")
 local alphanum = alpha + digit
 
 local comment = "#" * (lpeg.P(1) - "\n") ^ 0
-
+local commentBlock = "#{" * (lpeg.P(1) - "#}") ^ 0 * "#}"
 
 local maxmatch = 0
 local space = lpeg.V "space"
@@ -99,7 +99,7 @@ grammar = lpeg.P { "prog",
   factor = numeral + T "(" * exp * T ")" + var,
   term = lpeg.Ct(factor * (opM * factor) ^ 0) / foldBin,
   exp = lpeg.Ct(term * (opA * term) ^ 0) / foldBin,
-  space = (lpeg.S(" \t\n") + comment) ^ 0
+  space = (lpeg.S(" \t\n") + commentBlock + comment) ^ 0
       * lpeg.P(function(_, p)
         maxmatch = math.max(maxmatch, p);
         return true
@@ -108,16 +108,22 @@ grammar = lpeg.P { "prog",
 
 
 local function syntaxError(input, max)
+  local parsed = string.sub(input, 0, max - 1)
+  local newline = lpeg.Ct(((lpeg.P(1) - "\n") ^ 0 * lpeg.C "\n") ^ 0)
+  local endLn = #newline:match(parsed)
+  print("Syntax error near line " .. 1 + endLn .. ":\n")
+
   io.stderr:write("syntax error\n")
   io.stderr:write(string.sub(input, max - 10, max - 1),
     "|", string.sub(input, max, max + 11), "\n")
 end
 
 local function parse(input)
+  maxmatch = 0
   local res = grammar:match(input)
   if (not res) then
     syntaxError(input, maxmatch)
-    os.exit(1)
+    -- os.exit(1) -- disabled to make LuaUnit happy
   end
   return res
 end
