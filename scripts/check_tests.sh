@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 EXIT_CODE=0
-for sut in $(find . -iregex ".*(exercise_.*|lesson_test).lua"); do
+# for sut in $(find -E . -iregex ".*(exercise_.*|lesson_test).lua"); do
+for sut in $(find . -iregex ".*\(exercise_.*\|lesson_test\).lua"); do
     echo "Running tests in ${sut}" 
     sut_dir=$(dirname ${sut})
     export DIR=${sut_dir}
