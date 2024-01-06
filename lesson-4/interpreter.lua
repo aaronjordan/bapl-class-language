@@ -53,7 +53,21 @@ for i = 1, #reserved do
 end
 excluded = excluded * -alphanum
 
-local ID = (lpeg.C(alpha * alphanum ^ 0) - excluded) * space
+local idPattern = lpeg.P(alpha * alphanum ^ 0)
+local ID = (lpeg.C(function(src, p)
+  local next = string.sub(src, p);
+  local res = lpeg.C(idPattern):match(next)
+  if (not res) then return false end
+
+  for i = 1, #reserved do
+    if res == reserved[i] then
+      print('invalid use of reserved word as identifier')
+      return false
+    end
+  end
+
+  return #res + p
+end)) * space
 local var = ID / nodeVar
 
 

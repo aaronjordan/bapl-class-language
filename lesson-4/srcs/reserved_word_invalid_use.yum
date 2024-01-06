@@ -1,0 +1,11 @@
+x = 12;
+y = 12;
+z = x * y;
+z2 = (x*x) / (y*y);
+returning = z;
+returning = z;
+returning = z;
+returning = z;
+returning = z;
+return = returning; # throw here
+return z

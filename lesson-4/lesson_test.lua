@@ -51,4 +51,14 @@ function TestBlockComments()
   lu.assertNotNil(ast)
 end
 
+-- CP 9 / Alternative for reserved words
+-- Extend [lang] to identify uses of reserved words in a match-time capture.
+function TestReservedWordAlternate()
+  local fname = "reserved_word_invalid_use.yum"
+
+  lang.parse(loadFile(fname))
+  lu.assertStrContains(console[outputNumber - 2], "invalid use of reserved word")
+  lu.assertStrContains(console[outputNumber - 1], "error near line 10")
+end
+
 os.exit(lu.LuaUnit.run())
