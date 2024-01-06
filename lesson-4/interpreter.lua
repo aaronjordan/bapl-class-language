@@ -1,34 +1,35 @@
-
 local lpeg = require "lpeg"
 local pt = require "pt"
 
 ----------------------------------------------------
-local function I (msg)
-  return lpeg.P(function () print(msg); return true end)
+local function I(msg)
+  return lpeg.P(function()
+    print(msg); return true
+  end)
 end
 
 ----------------------------------------------------
-local function nodeNum (num)
-  return {tag = "number", val = tonumber(num)}
+local function nodeNum(num)
+  return { tag = "number", val = tonumber(num) }
 end
 
-local function nodeVar (var)
-  return {tag = "variable", var = var}
+local function nodeVar(var)
+  return { tag = "variable", var = var }
 end
 
-local function nodeAssgn (id, exp)
-  return {tag = "assgn", id = id, exp = exp}
+local function nodeAssgn(id, exp)
+  return { tag = "assgn", id = id, exp = exp }
 end
 
-local function nodeRet (exp)
-  return {tag = "ret", exp = exp}
+local function nodeRet(exp)
+  return { tag = "ret", exp = exp }
 end
 
-local function nodeSeq (st1, st2)
+local function nodeSeq(st1, st2)
   if st2 == nil then
     return st1
   else
-    return {tag = "seq", st1 = st1, st2 = st2}
+    return { tag = "seq", st1 = st1, st2 = st2 }
   end
 end
 
@@ -36,44 +37,44 @@ local alpha = lpeg.R("AZ", "az")
 local digit = lpeg.R("09")
 local alphanum = alpha + digit
 
-local comment = "#" * (lpeg.P(1) - "\n")^0
+local comment = "#" * (lpeg.P(1) - "\n") ^ 0
 
 
 local maxmatch = 0
-local space = lpeg.V"space"
+local space = lpeg.V "space"
 
 
-local numeral = lpeg.R("09")^1 / nodeNum  * space
+local numeral = lpeg.R("09") ^ 1 / nodeNum * space
 
-local reserved = {"return", "if"}
+local reserved = { "return", "if" }
 local excluded = lpeg.P(false)
 for i = 1, #reserved do
   excluded = excluded + reserved[i]
 end
 excluded = excluded * -alphanum
 
-local ID = (lpeg.C(alpha * alphanum^0) - excluded) * space
+local ID = (lpeg.C(alpha * alphanum ^ 0) - excluded) * space
 local var = ID / nodeVar
 
 
-local function T (t)
+local function T(t)
   return t * space
 end
 
 
-local function Rw (t)
+local function Rw(t)
   assert(excluded:match(t))
   return t * -alphanum * space
 end
 
 
-local opA = lpeg.C(lpeg.S"+-") * space
-local opM = lpeg.C(lpeg.S"*/") * space
+local opA = lpeg.C(lpeg.S "+-") * space
+local opM = lpeg.C(lpeg.S "*/") * space
 
 
 -- Convert a list {n1, "+", n2, "+", n3, ...} into a tree
 -- {...{ op = "+", e1 = {op = "+", e1 = n1, n2 = n2}, e2 = n3}...}
-local function foldBin (lst)
+local function foldBin(lst)
   local tree = lst[1]
   for i = 2, #lst, 2 do
     tree = { tag = "binop", e1 = tree, op = lst[i], e2 = lst[i + 1] }
@@ -81,38 +82,38 @@ local function foldBin (lst)
   return tree
 end
 
-local factor = lpeg.V"factor"
-local term = lpeg.V"term"
-local exp = lpeg.V"exp"
-local stat = lpeg.V"stat"
-local stats = lpeg.V"stats"
-local block = lpeg.V"block"
+local factor = lpeg.V "factor"
+local term = lpeg.V "term"
+local exp = lpeg.V "exp"
+local stat = lpeg.V "stat"
+local stats = lpeg.V "stats"
+local block = lpeg.V "block"
 
-grammar = lpeg.P{"prog",
+grammar = lpeg.P { "prog",
   prog = space * stats * -1,
-  stats = stat * (T";" * stats)^-1 / nodeSeq,
-  block = T"{" * stats * T";"^-1 * T"}",
+  stats = stat * (T ";" * stats) ^ -1 / nodeSeq,
+  block = T "{" * stats * T ";" ^ -1 * T "}",
   stat = block
-       + ID * T"=" * exp / nodeAssgn
-       + Rw"return" * exp / nodeRet,
-  factor = numeral + T"(" * exp * T")" + var,
-  term = lpeg.Ct(factor * (opM * factor)^0) / foldBin,
-  exp = lpeg.Ct(term * (opA * term)^0) / foldBin,
-  space = (lpeg.S(" \t\n") + comment)^0
-            * lpeg.P(function (_,p)
-                       maxmatch = math.max(maxmatch, p);
-                       return true
-                     end)
+      + ID * T "=" * exp / nodeAssgn
+      + Rw "return" * exp / nodeRet,
+  factor = numeral + T "(" * exp * T ")" + var,
+  term = lpeg.Ct(factor * (opM * factor) ^ 0) / foldBin,
+  exp = lpeg.Ct(term * (opA * term) ^ 0) / foldBin,
+  space = (lpeg.S(" \t\n") + comment) ^ 0
+      * lpeg.P(function(_, p)
+        maxmatch = math.max(maxmatch, p);
+        return true
+      end)
 }
 
 
-local function syntaxError (input, max)
+local function syntaxError(input, max)
   io.stderr:write("syntax error\n")
   io.stderr:write(string.sub(input, max - 10, max - 1),
-        "|", string.sub(input, max, max + 11), "\n")
+    "|", string.sub(input, max, max + 11), "\n")
 end
 
-local function parse (input)
+local function parse(input)
   local res = grammar:match(input)
   if (not res) then
     syntaxError(input, maxmatch)
@@ -124,17 +125,20 @@ end
 ----------------------------------------------------
 local Compiler = { code = {}, vars = {}, nvars = 0 }
 
-function Compiler:addCode (op)
+function Compiler:addCode(op)
   local code = self.code
   code[#code + 1] = op
 end
 
+local ops = {
+  ["+"] = "add",
+  ["-"] = "sub",
+  ["*"] = "mul",
+  ["/"] = "div"
+}
 
-local ops = {["+"] = "add", ["-"] = "sub",
-             ["*"] = "mul", ["/"] = "div"}
 
-
-function Compiler:var2num (id)
+function Compiler:var2num(id)
   local num = self.vars[id]
   if not num then
     num = self.nvars + 1
@@ -144,8 +148,7 @@ function Compiler:var2num (id)
   return num
 end
 
-
-function Compiler:codeExp (ast)
+function Compiler:codeExp(ast)
   if ast.tag == "number" then
     self:addCode("push")
     self:addCode(ast.val)
@@ -156,12 +159,12 @@ function Compiler:codeExp (ast)
     self:codeExp(ast.e1)
     self:codeExp(ast.e2)
     self:addCode(ops[ast.op])
-  else error("invalid tree")
+  else
+    error("invalid tree")
   end
 end
 
-
-function Compiler:codeStat (ast)
+function Compiler:codeStat(ast)
   if ast.tag == "assgn" then
     self:codeExp(ast.exp)
     self:addCode("store")
@@ -172,11 +175,12 @@ function Compiler:codeStat (ast)
   elseif ast.tag == "ret" then
     self:codeExp(ast.exp)
     self:addCode("ret")
-  else error("invalid tree")
+  else
+    error("invalid tree")
   end
 end
 
-local function compile (ast)
+local function compile(ast)
   Compiler:codeStat(ast)
   Compiler:addCode("push")
   Compiler:addCode(0)
@@ -186,11 +190,11 @@ end
 
 ----------------------------------------------------
 
-local function run (code, mem, stack)
+local function run(code, mem, stack)
   local pc = 1
   local top = 0
   while true do
-  --[[
+    --[[
   io.write("--> ")
   for i = 1, top do io.write(stack[i], " ") end
   io.write("\n", code[pc], "\n")
@@ -223,19 +227,26 @@ local function run (code, mem, stack)
       local id = code[pc]
       mem[id] = stack[top]
       top = top - 1
-    else error("unknown instruction")
+    else
+      error("unknown instruction")
     end
     pc = pc + 1
   end
 end
 
+return {
+  parse = parse,
+  compile = compile,
+  run = run,
+}
 
-local input = io.read("a")
-local ast = parse(input)
-print(pt.pt(ast))
-local code = compile(ast)
-print(pt.pt(code))
-local stack = {}
-local mem = {}
-run(code, mem, stack)
-print(stack[1])
+
+-- local input = io.read("a")
+-- local ast = parse(input)
+-- print(pt.pt(ast))
+-- local code = compile(ast)
+-- print(pt.pt(code))
+-- local stack = {}
+-- local mem = {}
+-- run(code, mem, stack)
+-- print(stack[1])
