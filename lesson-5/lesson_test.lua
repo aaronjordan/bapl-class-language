@@ -23,7 +23,13 @@ local function loadFile(name)
 end
 
 function TestNotOperator()
+  local f = loadFile('not_operator.yum')
+  local ast = lang.parse(f)
+  local exec = lang.compile(ast);
 
+  local stack = {}
+  lang.run(exec, {}, stack)
+  lu.assertEquals(stack[1], 12)
 end
 
 os.exit(lu.LuaUnit.run())

@@ -9,7 +9,7 @@ local function I(msg)
 end
 
 
-local function node(tag, ...)
+local function node_meta(tag, ...)
   local labels = table.pack(...)
   local params = table.concat(labels, ", ")
   local fields = string.gsub(params, "(%w+)", "%1 = %1")
@@ -18,6 +18,23 @@ local function node(tag, ...)
     params, tag, fields)
   return assert(load(code))()
 end
+
+local function node(tag, ...)
+  local labels = table.pack(...)
+  return function(...)
+    local params = table.pack(...)
+    if (#labels ~= #params) then
+      error("invalid params to [node]")
+    end
+
+    local node = { tag = tag }
+    for i = 1, #labels do
+      node[labels[i]] = params[i]
+    end
+    return node
+  end
+end
+
 
 ----------------------------------------------------
 local function nodeSeq(st1, st2)
@@ -66,7 +83,17 @@ end
 
 local opA = lpeg.C(lpeg.S "+-") * space
 local opM = lpeg.C(lpeg.S "*/") * space
+local opP = lpeg.C(lpeg.S "!") * space
 
+local function foldPre(lst)
+  if (#lst == 1) then
+    return lst[1];
+  else
+    local tree = lst[2]
+    tree = { tag = "mod", e1 = tree, op = lst[1] }
+    return tree
+  end
+end
 
 -- Convert a list {n1, "+", n2, "+", n3, ...} into a tree
 -- {...{ op = "+", e1 = {op = "+", e1 = n1, n2 = n2}, e2 = n3}...}
@@ -79,6 +106,7 @@ local function foldBin(lst)
 end
 
 local factor = lpeg.V "factor"
+local prefix = lpeg.V "prefix"
 local term = lpeg.V "term"
 local exp = lpeg.V "exp"
 local stat = lpeg.V "stat"
@@ -96,7 +124,8 @@ grammar = lpeg.P { "prog",
       + ID * T "=" * exp / node("assgn", "id", "exp")
       + Rw "return" * exp / node("ret", "exp"),
   factor = numeral + T "(" * exp * T ")" + var,
-  term = lpeg.Ct(factor * (opM * factor) ^ 0) / foldBin,
+  prefix = lpeg.Ct(opP ^ -1 * factor) / foldPre,
+  term = lpeg.Ct(prefix * (opM * prefix) ^ 0) / foldBin,
   exp = lpeg.Ct(term * (opA * term) ^ 0) / foldBin,
   space = (lpeg.S(" \t\n") + comment) ^ 0
       * lpeg.P(function(_, p)
@@ -133,7 +162,8 @@ local ops = {
   ["+"] = "add",
   ["-"] = "sub",
   ["*"] = "mul",
-  ["/"] = "div"
+  ["/"] = "div",
+  ["!"] = "not",
 }
 
 
@@ -176,6 +206,9 @@ function Compiler:codeExp(ast)
   elseif ast.tag == "binop" then
     self:codeExp(ast.e1)
     self:codeExp(ast.e2)
+    self:addCode(ops[ast.op])
+  elseif ast.tag == "mod" then
+    self:codeExp(ast.e1)
     self:addCode(ops[ast.op])
   else
     error("invalid tree")
@@ -242,6 +275,8 @@ local function run(code, mem, stack)
       pc = pc + 1
       top = top + 1
       stack[top] = code[pc]
+    elseif code[pc] == "not" then
+      stack[top] = stack[top] == 0 and 1 or 0
     elseif code[pc] == "add" then
       stack[top - 1] = stack[top - 1] + stack[top]
       top = top - 1
@@ -279,13 +314,8 @@ local function run(code, mem, stack)
   end
 end
 
-
-local input = io.read("a")
-local ast = parse(input)
-print(pt.pt(ast))
-local code = compile(ast)
-print(pt.pt(code))
-local stack = {}
-local mem = {}
-run(code, mem, stack)
-print(stack[1])
+return {
+  parse = parse,
+  compile = compile,
+  run = run,
+}
